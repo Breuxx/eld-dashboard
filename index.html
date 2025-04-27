@@ -7,7 +7,7 @@
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- MUI & Emotion UMD -->
+  <!-- Emotion & MUI UMD -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" />
   <script src="https://unpkg.com/@emotion/react@11.11.1/dist/emotion-react.umd.min.js"></script>
   <script src="https://unpkg.com/@emotion/styled@11.11.0/dist/emotion-styled.umd.min.js"></script>
@@ -26,19 +26,28 @@
   </style>
 </head>
 <body>
+  <h1 style="color:white; text-align:center; padding:20px;">
+    ⚙️ ELD Dashboard (static check)
+  </h1>
   <div id="root"></div>
 
   <script type="text/babel">
-    // === Плейсхолдеры: замените на свои реальные URL/токен ===
-    const API_BASE_URL = 'https://eld-platform-production.up.railway.app';     // ← ваш FastAPI URL
-    const WS_URL       = 'wss://eld-platform-production.up.railway.app/ws/eld'; // ← ваш WebSocket URL
-    const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoicXdlcnR5MzAwNSIsImEiOiJjbTl6Y3BzZmwwY2toMmtvazhwcnIzcjA2In0.VAzvIhPesFQhfT4jlpLGjw';                    // ← ваш Mapbox токен
+    // === Замените эти плейсхолдеры на свои реальные значения ===
+    const API_BASE_URL = 'https://eld-platform-production.up.railway.app/';
+    const WS_URL       = 'wss://eld-platform-production.up.railway.app/ws/eld';
+    const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoicXdlcnR5MzAwNSIsImEiOiJjbTl6Y3BzZmwwY2toMmtvazhwcnIzcjA2In0.VAzvIhPesFQhfT4jlpLGjw';
 
     const { useState, useEffect, useRef } = React;
-    const { Container, Typography, Paper, Table, TableHead, TableBody, TableRow, TableCell, Button, Box, CssBaseline, createTheme, ThemeProvider } = MaterialUI;
+    const {
+      Container, Typography, Paper, Table, TableHead, TableBody,
+      TableRow, TableCell, Button, Box, CssBaseline, createTheme, ThemeProvider
+    } = MaterialUI;
 
-    // API-клиент
-    const api = axios.create({ baseURL: API_BASE_URL, headers: {'Content-Type':'application/json'} });
+    // HTTP-клиент
+    const api = axios.create({
+      baseURL: API_BASE_URL,
+      headers: { 'Content-Type': 'application/json' }
+    });
 
     // Тема MUI
     const theme = createTheme({
@@ -149,18 +158,19 @@
       return <div ref={mapContainer} className="map-container"></div>;
     }
 
-    // Dashboard
+    // Главный компонент
     function App() {
       const [historical, setHistorical] = useState([]);
       const [live,       setLive]       = useState([]);
 
-      // Fetch historical
+      // Загрузка исторических данных
       const fetchData = (start,end) => {
-        api.get('/api/logs', { params:{ start:start.toISOString(), end:end.toISOString() } })
-          .then(r=>setHistorical(r.data));
+        api.get('/api/logs', {
+          params: { start:start.toISOString(), end:end.toISOString() }
+        }).then(r=>setHistorical(r.data));
       };
 
-      // WebSocket live
+      // WebSocket для live
       useEffect(()=>{
         const ws = new WebSocket(WS_URL);
         ws.onmessage = e => {
@@ -191,8 +201,8 @@
       );
     }
 
-    // Рендер
-    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+    // Рендерим приложениe
+    ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
 </html>
