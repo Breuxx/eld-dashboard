@@ -35,24 +35,76 @@
       headers: {'Content-Type':'application/json'} 
     });
 
-    // Компонент выбора периода
     function PeriodSelector({ onChange }) {
-      const presets = [8,14,30];
-      return (
-        <Paper sx={{ p:2, mb:2, background:'#1a202c' }}>
-          {presets.map(d => 
-            <Button key={d} variant="contained" color="secondary" sx={{mr:1}} 
-              onClick={()=>{
-                const end=new Date(), st=new Date(end);
-                st.setDate(end.getDate()-(d-1));
-                onChange(st,end);
-              }}>
-              Last {d} days
-            </Button>
-          )}
-        </Paper>
-      );
+  const presets = [8, 14, 30];
+  const [isRange, setIsRange] = React.useState(false);
+  const [rangeStart, setRangeStart] = React.useState('');
+  const [rangeEnd,   setRangeEnd]   = React.useState('');
+
+  const applyPreset = days => {
+    const end = new Date();
+    const start = new Date(end);
+    start.setDate(end.getDate() - (days - 1));
+    onChange(start, end);
+    setIsRange(false);
+  };
+
+  const applyRange = () => {
+    if (rangeStart && rangeEnd) {
+      const start = new Date(rangeStart);
+      const end   = new Date(rangeEnd);
+      onChange(start, end);
     }
+  };
+
+  return (
+    <Paper sx={{ p:2, mb:2, background:'#1a202c' }}>
+      <Box sx={{ display:'flex', flexWrap:'wrap', gap:1, alignItems:'center' }}>
+        {presets.map(d =>
+          <Button
+            key={d}
+            variant="contained"
+            color="secondary"
+            onClick={() => applyPreset(d)}
+          >
+            Last {d} days
+          </Button>
+        )}
+        <Button
+          variant="outlined"
+          color="secondary"
+          onClick={() => setIsRange(!isRange)}
+        >
+          {isRange ? 'Close Range' : 'Range'}
+        </Button>
+      </Box>
+      {isRange && (
+        <Box sx={{ mt:2, display:'flex', gap:1, alignItems:'center' }}>
+          <input
+            type="date"
+            value={rangeStart}
+            onChange={e => setRangeStart(e.target.value)}
+            style={{ padding:'8px', borderRadius:4, border:'1px solid #555' }}
+          />
+          <input
+            type="date"
+            value={rangeEnd}
+            onChange={e => setRangeEnd(e.target.value)}
+            style={{ padding:'8px', borderRadius:4, border:'1px solid #555' }}
+          />
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={applyRange}
+            disabled={!rangeStart || !rangeEnd}
+          >
+            Apply
+          </Button>
+        </Box>
+      )}
+    </Paper>
+  );
+}
 
     // Таблица логов
     function DriverTable({ data, title }) {
