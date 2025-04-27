@@ -26,16 +26,12 @@
   </style>
 </head>
 <body>
-  <!-- Статический тестовый заголовок -->
-  <h1 style="color:white; text-align:center; padding:20px;">
-    ⚙️ ELD Dashboard (static check)
-  </h1>
   <div id="root"></div>
 
   <script type="text/babel">
-    // === ВАЖНО: замените эти плейсхолдеры ===
-    const API_BASE_URL = 'https://eld-platform-production.up.railway.app';
-    const WS_URL       = 'wss://eld-platform-production.up.railway.app/ws/eld';
+    // === Замените эти плейсхолдеры на свои реальные значения ===
+    const API_BASE_URL        = 'https://eld-platform-production.up.railway.app';
+    const WS_URL              = 'wss://eld-platform-production.up.railway.app/ws/eld';
     const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoicXdlcnR5MzAwNSIsImEiOiJjbTl6Y3BzZmwwY2toMmtvazhwcnIzcjA2In0.VAzvIhPesFQhfT4jlpLGjw';
 
     const { useState, useEffect, useRef } = React;
@@ -68,8 +64,8 @@
     function PeriodSelector({ onChange }) {
       const presets = [8, 14, 30];
       const [isRange, setIsRange] = useState(false);
-      const [start, setStart] = useState('');
-      const [end, setEnd]     = useState('');
+      const [start, setStart]     = useState('');
+      const [end, setEnd]         = useState('');
 
       const applyPreset = days => {
         const e = new Date(), s = new Date(e);
@@ -107,7 +103,7 @@
       );
     }
 
-    // Таблица
+    // Таблица водителей
     function DriverTable({ data, title }) {
       return (
         <Paper sx={{ p:2, mb:2 }}>
@@ -136,7 +132,7 @@
       );
     }
 
-    // Карта
+    // Карта водителей
     function DriverMap({ data }) {
       const ref = useRef();
       useEffect(()=>{
@@ -154,18 +150,22 @@
       return <div ref={ref} className="map-container"></div>;
     }
 
-    // Главный
+    // Главный компонент
     function App() {
       const [hist, setHist] = useState([]);
       const [live, setLive] = useState([]);
 
-      const fetchData = (s,e)=> api.get('/api/logs',{ params:{start:s.toISOString(),end:e.toISOString()} })
-        .then(r=>setHist(r.data));
+      // Загрузка исторических данных
+      const fetchData = (s,e) => {
+        api.get('/api/logs',{ params:{ start:s.toISOString(), end:e.toISOString() } })
+           .then(r=>setHist(r.data));
+      };
 
+      // WebSocket для live
       useEffect(()=>{
         const ws = new WebSocket(WS_URL);
-        ws.onmessage = e=> setLive(prev=>[JSON.parse(e.data), ...prev]);
-        return ()=>ws.close();
+        ws.onmessage = e => setLive(prev => [JSON.parse(e.data), ...prev]);
+        return () => ws.close();
       },[]);
 
       return (
@@ -181,13 +181,13 @@
             <Typography variant="h6" color="secondary" gutterBottom>
               Map View
             </Typography>
-            <DriverMap data={[...live,...hist]}/>
+            <DriverMap data={[...live, ...hist]}/>
           </Container>
         </ThemeProvider>
       );
     }
 
-    // Рендерим
+    // Рендер приложения
     ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
