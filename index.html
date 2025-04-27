@@ -26,14 +26,15 @@
   </style>
 </head>
 <body>
+  <!-- Статический тестовый заголовок -->
   <h1 style="color:white; text-align:center; padding:20px;">
     ⚙️ ELD Dashboard (static check)
   </h1>
   <div id="root"></div>
 
   <script type="text/babel">
-    // === Замените эти плейсхолдеры на свои реальные значения ===
-    const API_BASE_URL = 'https://eld-platform-production.up.railway.app/';
+    // === ВАЖНО: замените эти плейсхолдеры ===
+    const API_BASE_URL = 'https://eld-platform-production.up.railway.app';
     const WS_URL       = 'wss://eld-platform-production.up.railway.app/ws/eld';
     const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoicXdlcnR5MzAwNSIsImEiOiJjbTl6Y3BzZmwwY2toMmtvazhwcnIzcjA2In0.VAzvIhPesFQhfT4jlpLGjw';
 
@@ -63,30 +64,27 @@
       }
     });
 
-    // PeriodSelector
+    // PeriodSelector с Range
     function PeriodSelector({ onChange }) {
       const presets = [8, 14, 30];
       const [isRange, setIsRange] = useState(false);
-      const [rangeStart, setRangeStart] = useState('');
-      const [rangeEnd,   setRangeEnd]   = useState('');
+      const [start, setStart] = useState('');
+      const [end, setEnd]     = useState('');
 
       const applyPreset = days => {
-        const end = new Date();
-        const start = new Date(end);
-        start.setDate(end.getDate() - (days - 1));
-        onChange(start, end);
+        const e = new Date(), s = new Date(e);
+        s.setDate(e.getDate() - (days - 1));
+        onChange(s, e);
         setIsRange(false);
       };
       const applyRange = () => {
-        if (!rangeStart || !rangeEnd) return;
-        const start = new Date(rangeStart);
-        const end   = new Date(rangeEnd);
-        onChange(start, end);
+        if (!start || !end) return;
+        onChange(new Date(start), new Date(end));
       };
 
       return (
         <Paper sx={{ p:2, mb:2 }}>
-          <Box sx={{ display:'flex', flexWrap:'wrap', gap:1, alignItems:'center' }}>
+          <Box sx={{ display:'flex', gap:1, alignItems:'center', flexWrap:'wrap' }}>
             {presets.map(d =>
               <Button key={d} variant="contained" color="secondary" onClick={()=>applyPreset(d)}>
                 Last {d} days
@@ -98,9 +96,9 @@
           </Box>
           {isRange && (
             <Box sx={{ mt:2, display:'flex', gap:1, alignItems:'center' }}>
-              <input type="date" value={rangeStart} onChange={e=>setRangeStart(e.target.value)} />
-              <input type="date" value={rangeEnd}   onChange={e=>setRangeEnd(e.target.value)} />
-              <Button variant="contained" color="secondary" onClick={applyRange} disabled={!rangeStart||!rangeEnd}>
+              <input type="date" value={start} onChange={e=>setStart(e.target.value)} />
+              <input type="date" value={end}   onChange={e=>setEnd(e.target.value)} />
+              <Button variant="contained" color="secondary" onClick={applyRange} disabled={!start||!end}>
                 Apply
               </Button>
             </Box>
@@ -109,7 +107,7 @@
       );
     }
 
-    // DriverTable
+    // Таблица
     function DriverTable({ data, title }) {
       return (
         <Paper sx={{ p:2, mb:2 }}>
@@ -138,45 +136,35 @@
       );
     }
 
-    // DriverMap
+    // Карта
     function DriverMap({ data }) {
-      const mapContainer = useRef();
+      const ref = useRef();
       useEffect(()=>{
         mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
         const map = new mapboxgl.Map({
-          container: mapContainer.current,
+          container: ref.current,
           style: 'mapbox://styles/mapbox/dark-v11',
           center: [69.24, 41.31],
           zoom: 8
         });
         data.forEach(d=>{
-          new mapboxgl.Marker()
-            .setLngLat([d.meta.lng, d.meta.lat])
-            .addTo(map);
+          new mapboxgl.Marker().setLngLat([d.meta.lng, d.meta.lat]).addTo(map);
         });
       },[data]);
-      return <div ref={mapContainer} className="map-container"></div>;
+      return <div ref={ref} className="map-container"></div>;
     }
 
-    // Главный компонент
+    // Главный
     function App() {
-      const [historical, setHistorical] = useState([]);
-      const [live,       setLive]       = useState([]);
+      const [hist, setHist] = useState([]);
+      const [live, setLive] = useState([]);
 
-      // Загрузка исторических данных
-      const fetchData = (start,end) => {
-        api.get('/api/logs', {
-          params: { start:start.toISOString(), end:end.toISOString() }
-        }).then(r=>setHistorical(r.data));
-      };
+      const fetchData = (s,e)=> api.get('/api/logs',{ params:{start:s.toISOString(),end:e.toISOString()} })
+        .then(r=>setHist(r.data));
 
-      // WebSocket для live
       useEffect(()=>{
         const ws = new WebSocket(WS_URL);
-        ws.onmessage = e => {
-          const ev = JSON.parse(e.data);
-          setLive(prev=>[ev, ...prev]);
-        };
+        ws.onmessage = e=> setLive(prev=>[JSON.parse(e.data), ...prev]);
         return ()=>ws.close();
       },[]);
 
@@ -187,21 +175,19 @@
             <Typography variant="h3" color="secondary" gutterBottom>
               ELD Dashboard
             </Typography>
-
             <PeriodSelector onChange={fetchData}/>
-
-            <DriverTable data={historical} title="Historical Logs"/>
-            <DriverTable data={live}       title="Live Updates"/>
+            <DriverTable data={hist} title="Historical Logs"/>
+            <DriverTable data={live} title="Live Updates"/>
             <Typography variant="h6" color="secondary" gutterBottom>
               Map View
             </Typography>
-            <DriverMap data={[...live, ...historical]}/>
+            <DriverMap data={[...live,...hist]}/>
           </Container>
         </ThemeProvider>
       );
     }
 
-    // Рендерим приложениe
+    // Рендерим
     ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
