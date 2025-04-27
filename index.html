@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ELD Dashboard</title>
+  <!-- React + ReactDOM + Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- MUI -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" />
+  <script src="https://unpkg.com/@mui/material@5.13.7/umd/material.development.js"></script>
+  <script src="https://unpkg.com/@mui/icons-material@5.13.7/umd/material-icons.js"></script>
+  <!-- Axios -->
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <!-- Mapbox GL -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.js"></script>
+  <style>
+    body { margin:0; font-family: Roboto, sans-serif; background:#0f1215; color:#fff; }
+    #root { padding:16px; }
+    .map-container { height: 300px; margin-top:16px; border-radius:8px; overflow:hidden; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { Container, Typography, Paper, Table, TableHead, TableBody, TableRow, TableCell, Button } = MaterialUI;
+
+    // HTTP-клиент
+    const api = axios.create({
+      baseURL: 'https://eld-platform-production.up.railway.app',
+      headers: {'Content-Type':'application/json'}
+    });
+
+    // Компонент выбора периода
+    function PeriodSelector({ onChange }) {
+      const presets = [8,14,30];
+      return (
+        <Paper sx={{ p:2, mb:2, background:'#1a202c' }}>
+          {presets.map(d => 
+            <Button key={d} variant="contained" color="secondary" sx={{mr:1}} 
+              onClick={()=>{
+                const end=new Date(), st=new Date(end);
+                st.setDate(end.getDate()-(d-1));
+                onChange(st,end);
+              }}>
+              Last {d} days
+            </Button>
+          )}
+        </Paper>
+      );
+    }
+
+    // Таблица логов
+    function DriverTable({ data, title }) {
+      return (
+        <Paper sx={{ p:2, mb:2, background:'#1a202c' }}>
+          <Typography variant="h6" color="secondary">{title}</Typography>
+          <Table sx={{ background:'#0f1215' }}>
+            <TableHead>
+              <TableRow>
+                {['Driver','Status','Lat','Lng','Time'].map(h=>(
+                  <TableCell key={h} sx={{ color:'#fff' }}>{h}</TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {data.map((d,i)=>(
+                <TableRow key={i}>
+                  <TableCell>{d.driver_id}</TableCell>
+                  <TableCell>{d.event_type}</TableCell>
+                  <TableCell>{d.meta.lat}</TableCell>
+                  <TableCell>{d.meta.lng}</TableCell>
+                  <TableCell>{new Date(d.timestamp).toLocaleString()}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Paper>
+      );
+    }
+
+    // Карта
+    function DriverMap({ data }) {
+      const ref=React.useRef();
+      useEffect(()=>{
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZXhsYW1wbGUiLCJhIjoiY2t2bGN5dGF4MDFjdTJvbnh1b2E4Nmw1aSJ9.xxxxxxxxxxxx';
+        const map = new mapboxgl.Map({
+          container: ref.current, style:'mapbox://styles/mapbox/dark-v11',
+          center:[69.24,41.31], zoom:8
+        });
+        data.forEach(d=>{
+          new mapboxgl.Marker()
+            .setLngLat([d.meta.lng,d.meta.lat])
+            .addTo(map);
+        });
+      },[data]);
+      return <div ref={ref} className="map-container"></div>;
+    }
+
+    // Главный компонент
+    function App() {
+      const [historical,setHist]=useState([]);
+      const [live,setLive]=useState([]);
+
+      const fetchData=(start,end)=>{
+        api.get('/api/logs',{params:{start:start.toISOString(), end:end.toISOString()}})
+          .then(r=>setHist(r.data));
+      };
+
+      useEffect(()=>{
+        const ws=new WebSocket('wss://eld-platform-production.up.railway.app/ws/eld');
+        ws.onmessage = e => {
+          const msg=JSON.parse(e.data);
+          setLive(prev=>[msg,...prev]);
+        };
+        return ()=>ws.close();
+      },[]);
+
+      return (
+        <Container maxWidth="md">
+          <Typography variant="h3" color="secondary" gutterBottom>ELD Dashboard</Typography>
+          <PeriodSelector onChange={fetchData}/>
+          <DriverTable data={historical} title="Historical Logs"/>
+          <DriverTable data={live}      title="Live Updates"/>
+          <Typography variant="h6" color="secondary">Map View</Typography>
+          <DriverMap data={[...live,...historical]}/>
+        </Container>
+      );
+    }
+
+    ReactDOM.render(<App/>, document.getElementById('root'));
+  </script>
+</body>
+</html>
