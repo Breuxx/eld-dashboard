@@ -32,7 +32,7 @@
     // === Плейсхолдеры: замените на свои реальные URL/токен ===
     const API_BASE_URL = 'https://eld-platform-production.up.railway.app';     // ← ваш FastAPI URL
     const WS_URL       = 'wss://eld-platform-production.up.railway.app/ws/eld'; // ← ваш WebSocket URL
-    const MAPBOX_ACCESS_TOKEN = 'YOUR_MAPBOX_ACCESS_TOKEN';                    // ← ваш Mapbox токен
+    const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoicXdlcnR5MzAwNSIsImEiOiJjbTl6Y3BzZmwwY2toMmtvazhwcnIzcjA2In0.VAzvIhPesFQhfT4jlpLGjw';                    // ← ваш Mapbox токен
 
     const { useState, useEffect, useRef } = React;
     const { Container, Typography, Paper, Table, TableHead, TableBody, TableRow, TableCell, Button, Box, CssBaseline, createTheme, ThemeProvider } = MaterialUI;
@@ -133,7 +133,7 @@
     function DriverMap({ data }) {
       const mapContainer = useRef();
       useEffect(()=>{
-        mapboxgl.accessToken = pk.eyJ1IjoicXdlcnR5MzAwNSIsImEiOiJjbTl6Y3BzZmwwY2toMmtvazhwcnIzcjA2In0.VAzvIhPesFQhfT4jlpLGjw;
+        mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
         const map = new mapboxgl.Map({
           container: mapContainer.current,
           style: 'mapbox://styles/mapbox/dark-v11',
