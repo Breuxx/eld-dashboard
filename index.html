@@ -3,21 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <title>ELD Dashboard</title>
-  <!-- React + ReactDOM + Babel -->
+  <!-- React + ReactDOM -->
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <!-- Babel standalone -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
   <!-- Emotion & MUI UMD -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" />
   <script src="https://unpkg.com/@emotion/react@11.11.1/dist/emotion-react.umd.min.js"></script>
   <script src="https://unpkg.com/@emotion/styled@11.11.0/dist/emotion-styled.umd.min.js"></script>
   <script src="https://unpkg.com/@mui/material@5.13.7/umd/material.development.js"></script>
   <script src="https://unpkg.com/@mui/icons-material@5.13.7/umd/material-icons.development.js"></script>
+
   <!-- Axios -->
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
   <!-- Mapbox GL -->
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.js"></script>
+
   <style>
     body { margin:0; background:#0f1215; color:#fff; font-family: Roboto, sans-serif; }
     #root { padding:16px; }
@@ -28,11 +33,11 @@
 <body>
   <div id="root"></div>
 
-  <script type="text/babel">
-    // === Замените эти плейсхолдеры на свои реальные значения ===
+  <script type="text/babel" data-presets="env,react">
+    // === Ваши настройки: подставьте реальные URL и токен ===
     const API_BASE_URL        = 'https://eld-platform-production.up.railway.app';
     const WS_URL              = 'wss://eld-platform-production.up.railway.app/ws/eld';
-    const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoicXdlcnR5MzAwNSIsImEiOiJjbTl6c3E4dG0wMDlnMmtzYWdwa3FrMnBwIn0.beLU1aPC16uBZUkSFDnU8Q';
+    const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoicXdlcnR5MzAwNSIsImEiOiJjbTl6c3FjbWEwb294MmtzODkzOGIyYWxhIn0.879w_VFZtQH5vzQSJE0Wgg';
 
     const { useState, useEffect, useRef } = React;
     const {
@@ -80,7 +85,7 @@
 
       return (
         <Paper sx={{ p:2, mb:2 }}>
-          <Box sx={{ display:'flex', gap:1, alignItems:'center', flexWrap:'wrap' }}>
+          <Box sx={{ display:'flex', gap:1, flexWrap:'wrap', alignItems:'center' }}>
             {presets.map(d =>
               <Button key={d} variant="contained" color="secondary" onClick={()=>applyPreset(d)}>
                 Last {d} days
@@ -103,19 +108,17 @@
       );
     }
 
-    // Таблица водителей
+    // Таблица логов
     function DriverTable({ data, title }) {
       return (
         <Paper sx={{ p:2, mb:2 }}>
           <Typography variant="h6" color="secondary" gutterBottom>{title}</Typography>
           <Table sx={{ background:'#0f1215' }}>
-            <TableHead>
-              <TableRow>
-                {['Driver','Status','Lat','Lng','Time'].map(h=>(
-                  <TableCell key={h} sx={{ color:'#fff' }}>{h}</TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
+            <TableHead><TableRow>
+              {['Driver','Status','Lat','Lng','Time'].map(h=>(
+                <TableCell key={h} sx={{ color:'#fff' }}>{h}</TableCell>
+              ))}
+            </TableRow></TableHead>
             <TableBody>
               {data.map((d,i)=>(
                 <TableRow key={i}>
@@ -132,7 +135,7 @@
       );
     }
 
-    // Карта водителей
+    // Карта
     function DriverMap({ data }) {
       const ref = useRef();
       useEffect(()=>{
@@ -155,13 +158,11 @@
       const [hist, setHist] = useState([]);
       const [live, setLive] = useState([]);
 
-      // Загрузка исторических данных
       const fetchData = (s,e) => {
         api.get('/api/logs',{ params:{ start:s.toISOString(), end:e.toISOString() } })
            .then(r=>setHist(r.data));
       };
 
-      // WebSocket для live
       useEffect(()=>{
         const ws = new WebSocket(WS_URL);
         ws.onmessage = e => setLive(prev => [JSON.parse(e.data), ...prev]);
@@ -187,7 +188,7 @@
       );
     }
 
-    // Рендер приложения
+    // Рендерим
     ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
