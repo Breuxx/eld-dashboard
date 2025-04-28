@@ -2,193 +2,102 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>ELD Dashboard</title>
-  <!-- React + ReactDOM -->
+  <title>ELD Dashboard (Test)</title>
+  <!-- React + ReactDOM + Babel -->
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <!-- Babel standalone -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Emotion & MUI UMD -->
+  <!-- MUI UMD -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" />
-  <script src="https://unpkg.com/@emotion/react@11.11.1/dist/emotion-react.umd.min.js"></script>
-  <script src="https://unpkg.com/@emotion/styled@11.11.0/dist/emotion-styled.umd.min.js"></script>
   <script src="https://unpkg.com/@mui/material@5.13.7/umd/material.development.js"></script>
   <script src="https://unpkg.com/@mui/icons-material@5.13.7/umd/material-icons.development.js"></script>
-
-  <!-- Axios -->
-  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-
-  <!-- Mapbox GL -->
-  <link href="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.css" rel="stylesheet" />
-  <script src="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.js"></script>
-
   <style>
     body { margin:0; background:#0f1215; color:#fff; font-family: Roboto, sans-serif; }
     #root { padding:16px; }
-    .map-container { height: 300px; margin-top:16px; border-radius:8px; overflow:hidden; }
     input[type="date"] { background:#1a202c; color:#fff; border:1px solid #555; border-radius:4px; padding:6px; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { border:1px solid #333; padding:8px; text-align:left; }
+    th { background:#1a202c; }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
   <script type="text/babel" data-presets="env,react">
-    // === Ваши настройки: подставьте реальные URL и токен ===
-    const API_BASE_URL        = 'https://eld-platform-production.up.railway.app';
-    const WS_URL              = 'wss://eld-platform-production.up.railway.app/ws/eld';
-    const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoicXdlcnR5MzAwNSIsImEiOiJjbTl6c3FjbWEwb294MmtzODkzOGIyYWxhIn0.879w_VFZtQH5vzQSJE0Wgg';
+    const { useState } = React;
+    const { Container, Typography, Paper, Button, Box, Table, TableHead, TableBody, TableRow, TableCell } = MaterialUI;
 
-    const { useState, useEffect, useRef } = React;
-    const {
-      Container, Typography, Paper, Table, TableHead, TableBody,
-      TableRow, TableCell, Button, Box, CssBaseline, createTheme, ThemeProvider
-    } = MaterialUI;
-
-    // HTTP-клиент
-    const api = axios.create({
-      baseURL: API_BASE_URL,
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-    // Тема MUI
-    const theme = createTheme({
-      palette: {
-        mode: 'dark',
-        primary:   { main: '#1a202c' },
-        secondary: { main: '#D4AF37' },
-        background:{ default:'#0f1215', paper:'#1a202c' },
-        text:      { primary:'#fff', secondary:'#d1cfcf' },
-      },
-      components: {
-        MuiButton: { styleOverrides:{ root:{ borderRadius:8, textTransform:'none' } } }
-      }
-    });
-
-    // PeriodSelector с Range
     function PeriodSelector({ onChange }) {
-      const presets = [8, 14, 30];
-      const [isRange, setIsRange] = useState(false);
-      const [start, setStart]     = useState('');
-      const [end, setEnd]         = useState('');
-
-      const applyPreset = days => {
-        const e = new Date(), s = new Date(e);
-        s.setDate(e.getDate() - (days - 1));
-        onChange(s, e);
-        setIsRange(false);
-      };
-      const applyRange = () => {
-        if (!start || !end) return;
-        onChange(new Date(start), new Date(end));
-      };
-
+      const presets = [8,14,30];
       return (
-        <Paper sx={{ p:2, mb:2 }}>
-          <Box sx={{ display:'flex', gap:1, flexWrap:'wrap', alignItems:'center' }}>
+        <Paper sx={{ p:2, mb:2, background:'#1a202c' }}>
+          <Box sx={{ display:'flex', gap:1 }}>
             {presets.map(d =>
-              <Button key={d} variant="contained" color="secondary" onClick={()=>applyPreset(d)}>
+              <Button
+                key={d}
+                variant="contained"
+                color="secondary"
+                onClick={() => onChange(d)}
+              >
                 Last {d} days
               </Button>
             )}
-            <Button variant="outlined" color="secondary" onClick={()=>setIsRange(!isRange)}>
-              {isRange ? 'Close Range' : 'Range'}
-            </Button>
           </Box>
-          {isRange && (
-            <Box sx={{ mt:2, display:'flex', gap:1, alignItems:'center' }}>
-              <input type="date" value={start} onChange={e=>setStart(e.target.value)} />
-              <input type="date" value={end}   onChange={e=>setEnd(e.target.value)} />
-              <Button variant="contained" color="secondary" onClick={applyRange} disabled={!start||!end}>
-                Apply
-              </Button>
-            </Box>
-          )}
         </Paper>
       );
     }
 
-    // Таблица логов
     function DriverTable({ data, title }) {
       return (
-        <Paper sx={{ p:2, mb:2 }}>
-          <Typography variant="h6" color="secondary" gutterBottom>{title}</Typography>
-          <Table sx={{ background:'#0f1215' }}>
-            <TableHead><TableRow>
-              {['Driver','Status','Lat','Lng','Time'].map(h=>(
-                <TableCell key={h} sx={{ color:'#fff' }}>{h}</TableCell>
-              ))}
-            </TableRow></TableHead>
+        <Paper sx={{ p:2, mb:2, background:'#1a202c' }}>
+          <Typography variant="h6" color="secondary">{title}</Typography>
+          <Table>
+            <TableHead>
+              <TableRow>
+                {['Driver','Status','Lat','Lng','Time'].map(h => (
+                  <TableCell key={h} sx={{ color:'#fff' }}>{h}</TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
             <TableBody>
-              {data.map((d,i)=>(
-                <TableRow key={i}>
-                  <TableCell>{d.driver_id}</TableCell>
-                  <TableCell>{d.event_type}</TableCell>
-                  <TableCell>{d.meta.lat}</TableCell>
-                  <TableCell>{d.meta.lng}</TableCell>
-                  <TableCell>{new Date(d.timestamp).toLocaleString()}</TableCell>
-                </TableRow>
-              ))}
+              {data.length === 0
+                ? <TableRow><TableCell colSpan={5}>No data</TableCell></TableRow>
+                : data.map((d,i) => (
+                    <TableRow key={i}>
+                      <TableCell>{d.driver_id}</TableCell>
+                      <TableCell>{d.event_type}</TableCell>
+                      <TableCell>{d.meta.lat}</TableCell>
+                      <TableCell>{d.meta.lng}</TableCell>
+                      <TableCell>{d.timestamp}</TableCell>
+                    </TableRow>
+                  ))
+              }
             </TableBody>
           </Table>
         </Paper>
       );
     }
 
-    // Карта
-    function DriverMap({ data }) {
-      const ref = useRef();
-      useEffect(()=>{
-        mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
-        const map = new mapboxgl.Map({
-          container: ref.current,
-          style: 'mapbox://styles/mapbox/dark-v11',
-          center: [69.24, 41.31],
-          zoom: 8
-        });
-        data.forEach(d=>{
-          new mapboxgl.Marker().setLngLat([d.meta.lng, d.meta.lat]).addTo(map);
-        });
-      },[data]);
-      return <div ref={ref} className="map-container"></div>;
-    }
-
-    // Главный компонент
     function App() {
-      const [hist, setHist] = useState([]);
-      const [live, setLive] = useState([]);
-
-      const fetchData = (s,e) => {
-        api.get('/api/logs',{ params:{ start:s.toISOString(), end:e.toISOString() } })
-           .then(r=>setHist(r.data));
-      };
-
-      useEffect(()=>{
-        const ws = new WebSocket(WS_URL);
-        ws.onmessage = e => setLive(prev => [JSON.parse(e.data), ...prev]);
-        return () => ws.close();
-      },[]);
-
+      const [days, setDays] = useState(8);
+      // Демозапись, чтобы точно было что рисовать
+      const demoData = [
+        { driver_id:'demo1', event_type:'DRIVING', meta:{lat:41.3,lng:69.2}, timestamp:'2025-04-16T12:00:00Z' },
+        { driver_id:'demo2', event_type:'REST',    meta:{lat:41.35,lng:69.25}, timestamp:'2025-04-15T09:30:00Z' }
+      ];
       return (
-        <ThemeProvider theme={theme}>
-          <CssBaseline/>
-          <Container maxWidth="md" sx={{ py:3 }}>
-            <Typography variant="h3" color="secondary" gutterBottom>
-              ELD Dashboard
-            </Typography>
-            <PeriodSelector onChange={fetchData}/>
-            <DriverTable data={hist} title="Historical Logs"/>
-            <DriverTable data={live} title="Live Updates"/>
-            <Typography variant="h6" color="secondary" gutterBottom>
-              Map View
-            </Typography>
-            <DriverMap data={[...live, ...hist]}/>
-          </Container>
-        </ThemeProvider>
+        <Container maxWidth="sm" sx={{ py:3 }}>
+          <Typography variant="h3" color="secondary" gutterBottom>
+            ELD Dashboard Test
+          </Typography>
+          <PeriodSelector onChange={setDays}/>
+          <Typography color="secondary">Showing last {days} days</Typography>
+          <DriverTable data={demoData} title="Historical Logs"/>
+          <DriverTable data={demoData} title="Live Updates"/>
+        </Container>
       );
     }
 
-    // Рендерим
     ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
